@@ -40,76 +40,76 @@ export class Queries {
     });
   }
 
-  getUsers(request: Request, response: Response) {
-    this._pool.query(
-      "SELECT * FROM users ORDER BY id ASC",
-      (error: Error, results: QueryResult) => {
-        if (error) {
-          throw error;
-        }
-        response.status(200).json(results.rows);
-      }
-    );
+  async getUsers(request: Request, response: Response) {
+    try {
+      const result = await this._pool.query(
+        "SELECT * FROM users ORDER BY id ASC"
+      );
+      return result.rows;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  getUserById(request: Request, response: Response) {
+  async getUserById(request: Request, response: Response) {
     const id = parseInt(request.params.id);
-    // id=$1. In this instance, $1 is a numbered placeholder that PostgreSQL uses natively instead of the ? placeholder
-    this._pool.query(
-      "SELECT * FROM users WHERE id = $1",
-      [id],
-      (error: Error, results: QueryResult) => {
-        if (error) {
-          throw error;
-        }
-        response.status(200).json(results.rows);
-      }
-    );
+
+    try {
+      const results = await this._pool.query(
+        "SELECT * FROM users WHERE id = $1",
+        [id]
+      );
+      return results.rows;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  createUser(request: Request, response: Response) {
+  async createUser(request: Request, response: Response) {
     const { name, email } = request.body;
 
-    this._pool.query(
-      "INSERT INTO users (name, email) VALUES ($1, $2)",
-      [name, email],
-      (error: Error, results: QueryResult) => {
-        if (error) {
-          throw error;
-        }
-        response.status(201).send(`User ${name} was successfully added`);
-      }
-    );
+    try {
+      const results = await this._pool.query(
+        "INSERT INTO users (name, email) VALUES ($1, $2)",
+        [name, email]
+      );
+      return name;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  updateUser(request: Request, response: Response) {
+  async updateUser(request: Request, response: Response) {
     const id = parseInt(request.params.id);
     const { name, email } = request.body;
-
-    this._pool.query(
-      "UPDATE users SET name = $1, email = $2 WHERE id = $3",
-      [name, email, id],
-      (error: Error, results: QueryResult) => {
-        if (error) {
-          throw error;
-        }
-        response.status(200).send(`User modified with ID: ${id}`);
-      }
-    );
+    try {
+      const results = await this._pool.query(
+        "UPDATE users SET name = $1, email = $2 WHERE id = $3",
+        [name, email, id]
+      );
+      return id;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  deleteUser(request: Request, response: Response) {
+  async deleteUser(request: Request, response: Response) {
     const id = parseInt(request.params.id);
 
-    this._pool.query(
-      "DELETE FROM users WHERE id = $1",
-      [id],
-      (error: Error, results: QueryResult) => {
-        if (error) {
-          throw error;
+    try {
+      const results = this._pool.query(
+        "DELETE FROM users WHERE id = $1",
+        [id],
+        (error: Error, results: QueryResult) => {
+          if (error) {
+            throw error;
+          }
+          return id;
         }
-        response.status(200).send(`User deleted with ID: ${id}`);
-      }
-    );
+      );
+      return id;
+    } catch (error) {
+      throw error;
+    }
   }
 }

@@ -1,6 +1,6 @@
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
-import express, { Express, Request, Response } from "express";
+import express, { Express } from "express";
 import { Queries } from "./modules/Queries";
 import users from "./routes/users";
 
@@ -16,10 +16,6 @@ app.use(
     extended: true,
   })
 );
-
-app.get("/", (req: Request, res: Response) => {
-  res.json({ info: "Node.js, Express, and Postgres API" });
-});
 
 app.use("/users", users(queries));
 
