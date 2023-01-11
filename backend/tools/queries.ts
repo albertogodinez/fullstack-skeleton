@@ -1,87 +1,115 @@
-import { Request, Response } from 'express';
-import { Pool, QueryResult } from 'pg';
+import { Request, Response } from "express";
+import { Pool, QueryResult } from "pg";
 
-const db: string | undefined = process.env.DATABASE;
-const dbUser: string | undefined = process.env.DATABASE_USER;
-const dbHost: string | undefined = process.env.DATABASE_HOST;
-const dbPassword: string | undefined = process.env.DATABASE_PASSWORD;
-const dbPort: number | undefined = Number(process.env.DATABASE_PORT);
+export class Queries {
+  _db: string | undefined;
+  _dbUser: string | undefined;
+  _dbHost: string | undefined;
+  _dbPassword: string | undefined;
+  _dbPort: number | undefined;
+  _pool!: Pool;
 
-if(!db || !dbUser || !dbHost || !dbPassword || !dbPort) {
-  // handle the case where any of the variables is undefined
-  throw new Error('Not able to connect to database')
-}
+  constructor() {
+    this._initializeDatabase();
+  }
 
-const pool = new Pool({
-  user: dbUser,
-  host: dbHost,
-  database: db,
-  password: dbPassword,
-  port: dbPort,
-});
+  private _initializeDatabase() {
+    this._db = process.env.DATABASE;
+    this._dbUser = process.env.DATABASE_USER;
+    this._dbHost = process.env.DATABASE_HOST;
+    this._dbPassword = process.env.DATABASE_PASSWORD;
+    this._dbPort = Number(process.env.DATABASE_PORT);
 
-const getUsers = (request: Request, response: Response) => {
-  pool.query('SELECT * FROM users ORDER BY id ASC', (error: Error, results: QueryResult) => {
-    if (error) {
-      throw error
+    if (
+      !this._db ||
+      !this._dbUser ||
+      !this._dbHost ||
+      !this._dbPassword ||
+      !this._dbPort
+    ) {
+      // handle the case where any of the variables is undefined
+      throw new Error("Not able to connect to database");
     }
-    response.status(200).json(results.rows)
-  })
-}
 
-const getUserById = (request: Request, response: Response) => {
-  const id = parseInt(request.params.id)
+    this._pool = new Pool({
+      user: this._dbUser,
+      host: this._dbHost,
+      database: this._db,
+      password: this._dbPassword,
+      port: this._dbPort,
+    });
+  }
 
-  pool.query('SELECT * FROM users WHERE id = $1', [id], (error: Error, results: QueryResult) => {
-    if (error) {
-      throw error
-    }
-    response.status(200).json(results.rows)
-  })
-}
-
-const createUser = (request: Request, response: Response) => {
-  const { name, email } = request.body
-
-  pool.query('INSERT INTO users (name, email) VALUES ($1, $2)', [name, email], (error: Error, results: QueryResult) => {
-    if (error) {
-      throw error
-    }
-    response.status(201).send(`User added with ID: ${results.rows[0].id}`)
-  })
-}
-
-const updateUser = (request: Request, response: Response) => {
-  const id = parseInt(request.params.id)
-  const { name, email } = request.body
-
-  pool.query(
-    'UPDATE users SET name = $1, email = $2 WHERE id = $3',
-    [name, email, id],
-    (error: Error, results: QueryResult) => {
-      if (error) {
-        throw error
+  getUsers(request: Request, response: Response) {
+    this._pool.query(
+      "SELECT * FROM users ORDER BY id ASC",
+      (error: Error, results: QueryResult) => {
+        if (error) {
+          throw error;
+        }
+        response.status(200).json(results.rows);
       }
-      response.status(200).send(`User modified with ID: ${id}`)
-    }
-  )
-}
+    );
+  }
 
-const deleteUser = (request: Request, response: Response) => {
-  const id = parseInt(request.params.id)
+  getUserById(request: Request, response: Response) {
+    const id = parseInt(request.params.id);
+    // id=$1. In this instance, $1 is a numbered placeholder that PostgreSQL uses natively instead of the ? placeholder
+    this._pool.query(
+      "SELECT * FROM users WHERE id = $1",
+      [id],
+      (error: Error, results: QueryResult) => {
+        if (error) {
+          throw error;
+        }
+        response.status(200).json(results.rows);
+      }
+    );
+  }
 
-  pool.query('DELETE FROM users WHERE id = $1', [id], (error: Error, results: QueryResult) => {
-    if (error) {
-      throw error
-    }
-    response.status(200).send(`User deleted with ID: ${id}`)
-  })
-}
+  createUser(request: Request, response: Response) {
+    const { name, email } = request.body;
 
-module.exports = {
-  getUsers,
-  getUserById,
-  createUser,
-  updateUser,
-  deleteUser,
+    this._pool.query(
+      "INSERT INTO users (name, email) VALUES ($1, $2)",
+      [name, email],
+      (error: Error, results: QueryResult) => {
+        if (error) {
+          throw error;
+        }
+        response.status(201).send(`User added with ID: ${results.rows[0].id}`);
+      }
+    );
+  }
+
+  updateUser(request: Request, response: Response) {
+    const id = parseInt(request.params.id);
+    const { name, email } = request.body;
+
+    this._pool.query(
+      "UPDATE users SET name = $1, email = $2 WHERE id = $3",
+      [name, email, id],
+      (error: Error, results: QueryResult) => {
+        if (error) {
+          throw error;
+        }
+        response.status(200).send(`User modified with ID: ${id}`);
+      }
+    );
+  }
+
+  deleteUser(request: Request, response: Response) {
+    const id = parseInt(request.params.id);
+
+    this._pool.query(
+      "DELETE FROM users WHERE id = $1",
+      [id],
+      (error: Error, results: QueryResult) => {
+        if (error) {
+          throw error;
+        }
+        response.status(200).send(`User deleted with ID: ${id}`);
+      }
+    );
+  }
 }
